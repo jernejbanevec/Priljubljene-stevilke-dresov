@@ -16,7 +16,7 @@ stevilke_dresov_directory = 'C:/Users\JernejPC\Documents\Jernej - Financna matem
 
 # ime CSV datoteke s podatki
 podatki_stevilke_dresov_csv = "podatki.csv"
-
+podatki_stevilke_dresov_csv2 = "podatki1.csv"
 # filepage
 #frontpage_filename = "stevilke_dresov_1965_html"
 
@@ -102,10 +102,12 @@ def get_all_the_data(directory):
         vsi += get_data_from_string(directory, ime_datoteke)
     return vsi
 
-#podatki_igralci = get_all_the_data(stevilke_dresov_directory)
+#=============================== CSV =======================================
+
+podatki_igralci = get_all_the_data(stevilke_dresov_directory)
 
 def zapisi_csv(podatki, ime_datoteke):
-    with open(ime_datoteke, 'w') as datoteka:
+    with open(ime_datoteke, 'w', newline='') as datoteka:
         polja = ['ime', 'konec_sezone', 'ekipa', 'stevilka']
         pisalec = csv.DictWriter(datoteka, polja)
         #pisalec.writeheader()
