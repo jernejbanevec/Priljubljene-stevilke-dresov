@@ -11,6 +11,7 @@ import csv
 # directory
 #DOMA:
 stevilke_dresov_directory = 'C:/Users\JernejPC\Documents\Jernej - Financna matematika\Programiranje 1\Priljubljene-stevilke-dresov\Podatki'
+igralci_directory = 'C:/Users\JernejPC\Documents\Jernej - Financna matematika\Programiranje 1\Priljubljene-stevilke-dresov\Podatki_igralci'
 #NA FAKSU
 #stevilke_dresov_directory = 'U:/Programiranje1\Priljubljene-stevilke-dresov\Podatki'
 
@@ -18,7 +19,7 @@ stevilke_dresov_directory = 'C:/Users\JernejPC\Documents\Jernej - Financna matem
 podatki_stevilke_dresov_csv = "podatki.csv"
 podatki_stevilke_dresov_csv2 = "podatki1.csv"
 # filepage
-#frontpage_filename = "stevilke_dresov_1965_html"
+frontpage_filename = "stevilke_dresov_2018_html"
 
 
 def download_url_to_string(url):
@@ -84,7 +85,7 @@ def get_data_from_string(directory, filename):
     whole_list_of_dicts = []
     for add in page_to_ads(page):
         rt = re.compile(r'<caption>(?P<stevilka>[0-9]{1,2})</caption>')
-        rx = re.compile(r'.*?"/players/[a-z]/[a-z]{5,10}0[1-9]\.html">(?P<ime>.+?)</a>'
+        rx = re.compile(r'.*?href="(?P<href>/players/[a-z]/[a-z]{5,10}0[1-9])\.html">(?P<ime>.+?)</a>'
                         r'.*?<a href="/teams/[A-Z]+/(?P<konec_sezone>.+?)\.html">(?P<ekipa>.+?)</a>',
                         re.DOTALL)
         data = re.search(rt, add)
@@ -102,13 +103,83 @@ def get_all_the_data(directory):
         vsi += get_data_from_string(directory, ime_datoteke)
     return vsi
 
+
 #=============================== CSV =======================================
 
-podatki_igralci = get_all_the_data(stevilke_dresov_directory)
+podatki = get_all_the_data(stevilke_dresov_directory)
+
 
 def zapisi_csv(podatki, ime_datoteke):
     with open(ime_datoteke, 'w', newline='') as datoteka:
         polja = ['ime', 'konec_sezone', 'ekipa', 'stevilka']
+        pisalec = csv.DictWriter(datoteka, polja, extrasaction='ignore')
+        #pisalec.writeheader()
+        for igralec in podatki:
+            pisalec.writerow(igralec)
+
+
+#=========== POBIRANJE ŠE PODATKOV O POSAMEZNEM IGRALCU ======================
+
+def clear_hrefs(data):
+    '''Funkcija počisti hrefe, da je vsak href samo enkrat.'''
+    sez = []
+    for igralec in data:
+        url = 'https://www.basketball-reference.com{}.html'.format(igralec['href'])
+        if url not in sez:
+            sez.append(url)
+    return sez
+
+def save_frontpages_part2():
+    '''Shrani "stevilke_dresov_url" to the file
+    "stevilke_dresov_directory"/"podatki_stevilke_html"'''
+    razlicni = clear_hrefs(podatki_igralci)
+    i = 1
+    for url in razlicni:
+        ime_datoteke = 'igralec_{}_html'.format(i)
+        text = download_url_to_string(url)
+        save_string_to_file(text, igralci_directory, ime_datoteke)
+        i += 1
+    return None
+#===============================================================================
+
+def get_data_from_string_part2(directory, filename):
+    '''Izlušči podatke.'''
+    page = read_file_to_string(directory, filename)
+    rt = re.compile(r'.*?<h1.itemprop="name">(?P<ime>.*?)</h1>'
+                    r'.*?lb</span>&nbsp;\((?P<visina>[0-9]{3})cm,&nbsp;(?P<teza>[0-9]{2,3})kg'
+                    r'.*?data-birth="(?P<leto_rojstva>[0-9]{4})-(?P<mesec_rojstva>[0-9]{2})-(?P<dan_rojstva>[0-9]{2})"'
+                    r'.*?>PTS</h4><p>([0-9]{1,2}\.[0-9])?</p>.<p>(?P<povprecje_tocke>([0-9]{1,2}\.[0-9])?)'
+                    r'.*?>TRB</h4><p>([0-9]{1,2}\.[0-9])?</p>.<p>(?P<povprecje_skoki>([0-9]{1,2}\.[0-9])?)'
+                    r'.*?>AST</h4><p>([0-9]{1,2}\.[0-9])?</p>.<p>(?P<povprecje_asistence>([0-9]{1,2}\.[0-9])?)',
+                    re.DOTALL)
+    data = re.search(rt, page)
+    ad_dict = data.groupdict()
+    return ad_dict
+
+#get_data_from_string_part2(igralci_directory, 'igralec_3370_html')
+
+def get_all_the_data_part2(directory):
+    vsi = []
+    for i in range(1, 645):
+            ime_datoteke = "igralec_{}_html".format(i)
+            vsi.append(get_data_from_string_part2(directory, ime_datoteke)) 
+    for i in range(646, 3429):
+            ime_datoteke = "igralec_{}_html".format(i)
+            vsi.append(get_data_from_string_part2(directory, ime_datoteke)) 
+    for i in range(3430, 3468):
+        if i not in [3433, 3438, 3440, 3502, 3441, 3445, 3446, 3453, 3457, 3461, 3462, 3464, 3466]:
+            ime_datoteke = "igralec_{}_html".format(i)
+            vsi.append(get_data_from_string_part2(directory, ime_datoteke))             
+    return vsi
+
+podatki_igralci = get_all_the_data_part2(igralci_directory)
+
+#if i not in [645, 3433, 3438, 3440, 3502, 3441, 3445, 3446, 3453, 3457, 3462, 3464, 3466]:
+# for i in range(3441, 3445):get_data_from_string_part2(igralci_directory, 'igralec_{}_html'.format(i))
+
+def zapisi_csv_part2(podatki, ime_datoteke):
+    with open(ime_datoteke, 'w', newline='') as datoteka:
+        polja = ['ime', 'visina', 'teza', 'leto_rojstva', 'mesec_rojstva', 'dan_rojstva', 'povprecje_tocke', 'povprecje_skoki', 'povprecje_asistence']
         pisalec = csv.DictWriter(datoteka, polja)
         #pisalec.writeheader()
         for igralec in podatki:
