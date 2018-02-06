@@ -17,9 +17,11 @@ igralci_directory = 'C:/Users\JernejPC\Documents\Jernej - Financna matematika\Pr
 
 # ime CSV datoteke s podatki
 podatki_stevilke_dresov_csv = "podatki.csv"
-podatki_stevilke_dresov_csv2 = "podatki1.csv"
+podatki_stevilke_dresov_csv2 = "podatki_igralci.csv"
 # filepage
 frontpage_filename = "stevilke_dresov_2018_html"
+# ime zip datoteke
+zip_ime = "zip_podatki_igralci_html"
 
 
 def download_url_to_string(url):
@@ -75,12 +77,12 @@ def page_to_ads(page):
 
 def merge_two_dicts(x, y):
     '''Funkcija, ki iz dveh slovarjev naredi enega'''
-    z = x.copy()   # start with x's keys and values
-    z.update(y)    # modifies z with y's keys and values & returns None
+    z = x.copy()   
+    z.update(y)    
     return z
 
 def get_data_from_string(directory, filename):
-    '''Izlušči podatke.'''
+    '''Izlušči podatke o za dano sezono in vrne seznam slovarjev za igralca v tej sezoni'''
     page = read_file_to_string(directory, filename)
     whole_list_of_dicts = []
     for add in page_to_ads(page):
@@ -97,6 +99,7 @@ def get_data_from_string(directory, filename):
 
 
 def get_all_the_data(directory):
+    '''Funkcija, ki shrani podatke za vse številke dresov'''
     vsi = []
     for leto in range(1965,2019):
         ime_datoteke = "stevilke_dresov_{}_html".format(leto)
@@ -110,10 +113,11 @@ podatki = get_all_the_data(stevilke_dresov_directory)
 
 
 def zapisi_csv(podatki, ime_datoteke):
+    '''Zapiše csv datoteko za številke dresov'''
     with open(ime_datoteke, 'w', newline='') as datoteka:
-        polja = ['ime', 'konec_sezone', 'ekipa', 'stevilka']
+        polja = ['ime', 'konec_sezone', 'ekipa', 'stevilka'] #tu sezona pomeni zadnje leto (npr. 2018 če gre za sezono 2017-2018)
         pisalec = csv.DictWriter(datoteka, polja, extrasaction='ignore')
-        #pisalec.writeheader()
+        pisalec.writeheader()
         for igralec in podatki:
             pisalec.writerow(igralec)
 
@@ -140,10 +144,11 @@ def save_frontpages_part2():
         save_string_to_file(text, igralci_directory, ime_datoteke)
         i += 1
     return None
+
 #===============================================================================
 
 def get_data_from_string_part2(directory, filename):
-    '''Izlušči podatke.'''
+    '''Izlušči podatke o posameznem igralcu.'''
     page = read_file_to_string(directory, filename)
     rt = re.compile(r'.*?<h1.itemprop="name">(?P<ime>.*?)</h1>'
                     r'.*?lb</span>&nbsp;\((?P<visina>[0-9]{3})cm,&nbsp;(?P<teza>[0-9]{2,3})kg'
@@ -159,6 +164,8 @@ def get_data_from_string_part2(directory, filename):
 #get_data_from_string_part2(igralci_directory, 'igralec_3370_html')
 
 def get_all_the_data_part2(directory):
+    '''Funkcija, ki preveri vse igralce. Izpusti zgolj igralce za katere ni podatkov
+    (npr. "dunkerje" ter igralce, ki so v nba prišli to sezono)'''
     vsi = []
     for i in range(1, 645):
             ime_datoteke = "igralec_{}_html".format(i)
@@ -172,15 +179,16 @@ def get_all_the_data_part2(directory):
             vsi.append(get_data_from_string_part2(directory, ime_datoteke))             
     return vsi
 
-podatki_igralci = get_all_the_data_part2(igralci_directory)
-
-#if i not in [645, 3433, 3438, 3440, 3502, 3441, 3445, 3446, 3453, 3457, 3462, 3464, 3466]:
-# for i in range(3441, 3445):get_data_from_string_part2(igralci_directory, 'igralec_{}_html'.format(i))
+#podatki_igralci = get_all_the_data_part2(igralci_directory)
 
 def zapisi_csv_part2(podatki, ime_datoteke):
-    with open(ime_datoteke, 'w', newline='') as datoteka:
-        polja = ['ime', 'visina', 'teza', 'leto_rojstva', 'mesec_rojstva', 'dan_rojstva', 'povprecje_tocke', 'povprecje_skoki', 'povprecje_asistence']
-        pisalec = csv.DictWriter(datoteka, polja)
-        #pisalec.writeheader()
+    '''Zapiše še drugo csv datoteko'''
+    with open(ime_datoteke, 'w', newline='', encoding = 'utf8') as datoteka:
+        polja = ["ime", "visina", "teza", "leto_rojstva", "mesec_rojstva", "dan_rojstva", "povprecje_tocke", "povprecje_skoki", "povprecje_asistence"]
+        pisalec = csv.DictWriter(datoteka, fieldnames=polja)
+        pisalec.writeheader()
         for igralec in podatki:
             pisalec.writerow(igralec)
+    return None
+
+
